@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Advanced App</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#e6f0ff,#f8fafc);}
+.box{background:white;padding:20px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.07);max-width:600px;width:95%;text-align:center;}
+input[type="text"],input[type="password"]{width:100%;padding:10px;margin-top:6px;border-radius:6px;border:1px solid #ddd;margin-bottom:10px;}
+button{padding:12px 18px;font-weight:600;background:#2563eb;color:white;border:0;border-radius:8px;cursor:pointer;margin-top:8px;}
+img{max-width:100%;border-radius:12px;margin-top:10px;}
+.warn{color:#b91c1c;font-weight:700;font-size:16px;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="box" id="appBox">
+  <h2 id="heading">Loading...</h2>
+  <div id="content">
+    <p>Loading...</p>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+const firebaseConfig={
+apiKey:"AIzaSyCtDWs_Ft0e2NcU-dtwaWPfy-gAXa0azQg",
+authDomain:"tanzim-main-admin-app.firebaseapp.com",
+databaseURL:"https://tanzim-main-admin-app-default-rtdb.firebaseio.com",
+projectId:"tanzim-main-admin-app",
+storageBucket:"tanzim-main-admin-app.firebasestorage.app",
+messagingSenderId:"12436676722",
+appId:"1:12436676722:web:f066ffbc343f0117eea2eb",
+measurementId:"G-QKK68SK6BN"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+const settingsRef=db.ref('simple_app');
+const appBox=document.getElementById('appBox');
+const headingEl=document.getElementById('heading');
+const contentEl=document.getElementById('content');
+
+let appData={}, loginData={};
+
+function openLink(url,type){
+  if(type==='app'){ window.location.href=url; }else{ window.open(url,'_blank'); }
+}
+
+function showLogin(){
+  headingEl.textContent="Login";
+  contentEl.innerHTML=`
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <br><button id="loginBtn">Login</button>
+    <br><button id="getBtn" style="margin-top:10px;background:#10b981;color:white;padding:10px 14px;border:none;border-radius:8px;cursor:pointer;">${loginData.btn_text}</button>
+    <p id="loginWarn" class="warn"></p>
+  `;
+
+  document.getElementById('loginBtn').onclick=()=>{
+    const u=document.getElementById('username').value.trim();
+    const p=document.getElementById('password').value.trim();
+    const warnEl=document.getElementById('loginWarn');
+    if(u===loginData.username && p===loginData.password){
+      showApp();
+    }else{
+      warnEl.textContent="Invalid username or password!";
+    }
+  };
+
+  document.getElementById('getBtn').onclick=()=>{
+    openLink(loginData.btn_url,'app');
+  };
+}
+
+function showApp(){
+  headingEl.textContent=appData.title||"Welcome";
+  let html='';
+  (appData.items||[]).forEach(item=>{
+    html+=`<div class="itemBox">
+      <img src="${item.image}" alt="Image"><br>
+      <button onclick="openLink('${item.url}','${item.type}')">${item.text}</button>
+    </div>`;
+  });
+  contentEl.innerHTML=html;
+}
+
+settingsRef.once('value').then(snap=>{
+  const val=snap.val()||{};
+  if(!val.status){ contentEl.innerHTML='<p class="warn">⚠️ Admin has turned off the app.</p>'; headingEl.textContent="App Closed"; return;}
+  loginData=val.login||{username:'',password:'',btn_text:'Get username & password here',btn_url:'#'};
+  appData=val.app||{title:'Welcome',items:[]};
+  showLogin();
+}).catch(err=>{
+  headingEl.textContent="Error";
+  contentEl.innerHTML='<p class="warn">Firebase error: '+err.message+'</p>';
+});
+</script>
+</body>
+</html>
